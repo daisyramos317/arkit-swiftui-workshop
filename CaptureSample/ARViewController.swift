@@ -33,6 +33,21 @@ class ARViewController: UIViewController, ARSessionDelegate, ARSCNViewDelegate {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        arView.session.delegate = self
 
     }
+}
+
+struct ARViewRepresentable: UIViewControllerRepresentable {
+    let session: ARSession
+    @ObservedObject var model : CameraViewModel
+
+    typealias UIViewControllerType = ARViewController
+
+    func makeUIViewController(context: Context) -> ARViewController {
+        return ARViewController(session: session, model: model)
+    }
+    func updateUIViewController(_ uiViewController:
+                                ARViewRepresentable.UIViewControllerType, context:
+                                UIViewControllerRepresentableContext<ARViewRepresentable>) { }
 }

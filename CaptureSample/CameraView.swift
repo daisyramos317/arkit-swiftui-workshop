@@ -29,7 +29,10 @@ struct CameraView: View {
                     // around the live preview and round the corners.
                     VStack {
                         Spacer()
-                        CameraPreviewView(session: model.sessionType)
+
+                        switch model.sessionType {
+                        case let .avCaptureSession(session):
+                        CameraPreviewView(session: session)
                             .frame(width: geometryReader.size.width,
                                    height: geometryReader.size.width * aspectRatio,
                                    alignment: .center)
@@ -43,6 +46,9 @@ struct CameraView: View {
                                     .padding(.all))
                         
                         Spacer()
+                        case let .arCaptureSession(session):
+                            ARViewRepresentable(session: session, model: model)
+                        }
                     }
                     
                     VStack {
