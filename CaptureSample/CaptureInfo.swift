@@ -25,18 +25,28 @@ struct CaptureInfo: Identifiable {
         case invalidPhotoString
         case noSuchDirectory(URL)
     }
-    
-    static let imageSuffix: String = ".HEIC"
-    
+
     /// This is a unique identifier for the capture sample.
     let id: UInt32
     
     /// This is a URL pointing to the sample's parent directory.
     let captureDir: URL
+
+    let imageUrlPrefix: ImagePrefix
+
+    var imageSuffix: ImageSuffix {
+        switch imageUrlPrefix {
+        case .ARKit:
+            return .jpg
+        case .AV:
+            return .jpg
+        }
+    }
     
-    init(id: UInt32, captureDir: URL) {
+    init(id: UInt32, captureDir: URL, imageUrlPrefix: ImagePrefix) {
         self.id = id
         self.captureDir = captureDir
+        self.imageUrlPrefix = imageUrlPrefix
     }
     
     var photoIdString: String {
@@ -44,7 +54,7 @@ struct CaptureInfo: Identifiable {
     }
     
     var imageUrl: URL {
-        return CaptureInfo.imageUrl(in: captureDir, id: id)
+        return CaptureInfo.imageUrl(in: captureDir, id: id, prefix: "\(imageUrlPrefix.rawValue)_", imageSuffix: imageSuffix)
     }
     
     var depthUrl: URL {
@@ -67,7 +77,7 @@ struct CaptureInfo: Identifiable {
                     return
                 }
                 do {
-                    let existence = try CaptureInfo.checkFilesExist(inFolder: captureDir, id: id)
+                    let existence = try checkFilesExist(inFolder: captureDir, id: id)
                     promise(.success(existence))
                 } catch {
                     logger.error("checkFilesExist: error \(String(describing: error))!")
@@ -98,7 +108,7 @@ struct CaptureInfo: Identifiable {
     }
     
     /// This method synchronously checks which data files already exist in a specified capture directory.
-    static func checkFilesExist(inFolder captureDir: URL, id: UInt32) throws -> FileExistence {
+    func checkFilesExist(inFolder captureDir: URL, id: UInt32) throws -> FileExistence {
         dispatchPrecondition(condition: .notOnQueue(DispatchQueue.main))
 
         guard CaptureInfo.doesDirectoryExist(url: captureDir) else {
@@ -106,10 +116,10 @@ struct CaptureInfo: Identifiable {
         }
         
         var result = FileExistence()
-        result.image = FileManager.default.fileExists(atPath: imageUrl(in: captureDir, id: id).path)
-        result.depth = FileManager.default.fileExists(atPath: depthUrl(in: captureDir, id: id).path)
+        result.image = FileManager.default.fileExists(atPath: CaptureInfo.imageUrl(in: captureDir, id: id, imageSuffix: imageSuffix).path)
+        result.depth = FileManager.default.fileExists(atPath: CaptureInfo.depthUrl(in: captureDir, id: id).path)
         result.gravity = FileManager.default.fileExists(
-            atPath: gravityUrl(in: captureDir, id: id).path)
+            atPath: CaptureInfo.gravityUrl(in: captureDir, id: id).path)
         return result
     }
     
@@ -130,7 +140,7 @@ struct CaptureInfo: Identifiable {
             throw Error.invalidPhotoString
         }
         let imgPrefix = photoString[...endOfPrefix]
-        guard imgPrefix == CaptureInfo.photoStringPrefix else {
+        guard imgPrefix == CaptureInfo.photoStringPrefix.appending(CaptureInfo.arPhotoStringPrefix) || imgPrefix == CaptureInfo.photoStringPrefix.appending(CaptureInfo.avPhotoStringPrefix) else {
             throw Error.invalidPhotoString
         }
         guard let id = UInt32(photoString[photoString.index(after: endOfPrefix)...]) else {
@@ -140,22 +150,23 @@ struct CaptureInfo: Identifiable {
     }
     
     /// This method returns the base name for a capture. It's based on the capture's unique identifier.
-    static func photoIdString(for id: UInt32) -> String {
-        return String(format: "%@%04d", photoStringPrefix, id)
+    static func photoIdString(for id: UInt32, imageTypePrefix: String = "") -> String {
+        return String(format: "%@%@%04d", photoStringPrefix, imageTypePrefix , id)
     }
     
-    static func photoIdString(from imageUrl: URL) throws -> String {
+    static func photoIdString(from imageUrl: URL, imageSuffix: ImageSuffix) throws -> String {
         let basename = imageUrl.lastPathComponent
-        guard basename.hasSuffix(imageSuffix), let suffixStartIndex = basename.lastIndex(of: ".") else {
+        guard basename.hasSuffix(imageSuffix.rawValue), let suffixStartIndex = basename.lastIndex(of: ".") else {
             throw Error.invalidPhotoString
         }
         return String(basename[..<suffixStartIndex])
     }
     
     /// This method returns the file URL for the image data relative to a specified directory.
-    static func imageUrl(in captureDir: URL, id: UInt32) -> URL {
-        return captureDir.appendingPathComponent(photoIdString(for: id).appending(imageSuffix))
+    static func imageUrl(in captureDir: URL, id: UInt32, prefix: String = "", imageSuffix: ImageSuffix) -> URL {
+        return captureDir.appendingPathComponent(photoIdString(for: id, imageTypePrefix: prefix).appending(imageSuffix.rawValue))
     }
+
     
     /// This method returns the file URL for the gravity data relative to a specified directory.
     static func gravityUrl(in captureDir: URL, id: UInt32) -> URL {
@@ -168,9 +179,8 @@ struct CaptureInfo: Identifiable {
     }
 
     static func confidenceMapImageUrl(in captureDir: URL, id: UInt32) -> URL {
-        return captureDir.appendingPathComponent(photoIdString(for: id).appending(".jpg").appending(".TIF"))
+        return captureDir.appendingPathComponent(photoIdString(for: id, imageTypePrefix: CaptureInfo.arPhotoStringPrefix).appending(".jpg").appending(".TIF"))
     }
-
     
     /// `CaptureInfo` uses this serial queue for all file system access.
     private static let loaderQueue =
@@ -181,4 +191,6 @@ struct CaptureInfo: Identifiable {
     private static let photoStringPrefix = "IMG_"
 
     static let arPhotoStringPrefix = "ARKit_"
+
+    static let avPhotoStringPrefix = "AV_"
 }

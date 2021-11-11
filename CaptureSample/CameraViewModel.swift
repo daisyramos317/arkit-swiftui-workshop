@@ -36,6 +36,9 @@ class CameraViewModel: ObservableObject {
             configuration.frameSemantics.insert(.sceneDepth)
         }
 
+        if type(of: configuration).supportsFrameSemantics(.smoothedSceneDepth) {
+            configuration.frameSemantics.insert(.smoothedSceneDepth)
+        }
 
         session.run(configuration)
         return session
@@ -129,10 +132,13 @@ class CameraViewModel: ObservableObject {
 
     private var defaultConfiguration: ARWorldTrackingConfiguration = {
         let configuration = ARWorldTrackingConfiguration()
-        if type(of: configuration).supportsSceneReconstruction(.meshWithClassification) {
-            configuration.sceneReconstruction.insert(.meshWithClassification)
-        } else {
-            configuration.planeDetection = [.horizontal, .vertical]
+
+        if type(of: configuration).supportsFrameSemantics(.sceneDepth) {
+            configuration.frameSemantics.insert(.sceneDepth)
+        }
+
+        if type(of: configuration).supportsFrameSemantics(.smoothedSceneDepth) {
+            configuration.frameSemantics.insert(.smoothedSceneDepth)
         }
         configuration.environmentTexturing = .automatic
         configuration.isLightEstimationEnabled = true

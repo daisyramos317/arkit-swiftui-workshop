@@ -10,6 +10,8 @@
 		ABA17BB3273D976C002CD11E /* SessionType.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABA17BB2273D976C002CD11E /* SessionType.swift */; };
 		ABA17BB5273D9B54002CD11E /* ARViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABA17BB4273D9B54002CD11E /* ARViewController.swift */; };
 		ABA17BB7273DA599002CD11E /* ARSnapshotInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABA17BB6273DA599002CD11E /* ARSnapshotInfo.swift */; };
+		ABA17BB9273DADB6002CD11E /* ImageSuffix.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABA17BB8273DADB6002CD11E /* ImageSuffix.swift */; };
+		ABA17BBB273DB574002CD11E /* ImagePrefix.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABA17BBA273DB574002CD11E /* ImagePrefix.swift */; };
 		C91EEE4B25EDA200009FD603 /* CaptureFoldersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C91EEE4A25EDA200009FD603 /* CaptureFoldersView.swift */; };
 		C91EEE4D25EDBE46009FD603 /* CaptureFolderState.swift in Sources */ = {isa = PBXBuildFile; fileRef = C91EEE4C25EDBE46009FD603 /* CaptureFolderState.swift */; };
 		C94968AE25F2C24100540756 /* InfoPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C94968AD25F2C24100540756 /* InfoPanelView.swift */; };
@@ -38,6 +40,8 @@
 		ABA17BB2273D976C002CD11E /* SessionType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionType.swift; sourceTree = "<group>"; };
 		ABA17BB4273D9B54002CD11E /* ARViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARViewController.swift; sourceTree = "<group>"; };
 		ABA17BB6273DA599002CD11E /* ARSnapshotInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARSnapshotInfo.swift; sourceTree = "<group>"; };
+		ABA17BB8273DADB6002CD11E /* ImageSuffix.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageSuffix.swift; sourceTree = "<group>"; };
+		ABA17BBA273DB574002CD11E /* ImagePrefix.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImagePrefix.swift; sourceTree = "<group>"; };
 		C91EEE4A25EDA200009FD603 /* CaptureFoldersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureFoldersView.swift; sourceTree = "<group>"; };
 		C91EEE4C25EDBE46009FD603 /* CaptureFolderState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureFolderState.swift; sourceTree = "<group>"; };
 		C94968AD25F2C24100540756 /* InfoPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InfoPanelView.swift; sourceTree = "<group>"; };
@@ -125,6 +129,8 @@
 				ABA17BB2273D976C002CD11E /* SessionType.swift */,
 				ABA17BB4273D9B54002CD11E /* ARViewController.swift */,
 				ABA17BB6273DA599002CD11E /* ARSnapshotInfo.swift */,
+				ABA17BB8273DADB6002CD11E /* ImageSuffix.swift */,
+				ABA17BBA273DB574002CD11E /* ImagePrefix.swift */,
 			);
 			path = CaptureSample;
 			sourceTree = "<group>";
@@ -230,11 +236,13 @@
 				C9605AE525CCB8D800FDB64F /* CameraView.swift in Sources */,
 				C9516ADB25F090FE00DA396D /* TriggerEveryTimer.swift in Sources */,
 				ABA17BB5273D9B54002CD11E /* ARViewController.swift in Sources */,
+				ABA17BB9273DADB6002CD11E /* ImageSuffix.swift in Sources */,
 				C9605AE925CCCD1200FDB64F /* Capture.swift in Sources */,
 				C91EEE4B25EDA200009FD603 /* CaptureFoldersView.swift in Sources */,
 				C96059F225CA210400FDB64F /* CameraPreviewView.swift in Sources */,
 				ABA17BB7273DA599002CD11E /* ARSnapshotInfo.swift in Sources */,
 				C9E38E1325C8CB5B00171AB3 /* CaptureSampleApp.swift in Sources */,
+				ABA17BBB273DB574002CD11E /* ImagePrefix.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

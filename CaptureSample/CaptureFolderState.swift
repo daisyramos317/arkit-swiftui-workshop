@@ -73,12 +73,15 @@ class CaptureFolderState: ObservableObject {
                     let imgUrls = try FileManager.default
                         .contentsOfDirectory(at: self.captureDir!, includingPropertiesForKeys: [],
                                              options: [.skipsHiddenFiles])
-                        .filter { $0.isFileURL
-                            && $0.lastPathComponent.hasSuffix(CaptureInfo.imageSuffix)
+                        .filter { url in
+                            return url.isFileURL && ImageSuffix.allCases.contains { url.lastPathComponent.hasSuffix($0.rawValue) }
                         }
                     for imgUrl in imgUrls {
+                        let photoIdStrings = ImageSuffix.allCases.compactMap { imageSuffix in
+                            return try? CaptureInfo.photoIdString(from: imgUrl, imageSuffix: imageSuffix)
+                        }
                         guard let photoIdString =
-                                try? CaptureInfo.photoIdString(from: imgUrl) else {
+                                photoIdStrings.first else {
                             logger.error("Can't get photoIdString from url: \"\(imgUrl)\"")
                             continue
                         }
@@ -86,8 +89,9 @@ class CaptureFolderState: ObservableObject {
                             logger.error("Can't get id from from photoIdString: \"\(photoIdString)\"")
                             continue
                         }
+                        let imageUrlComponents = photoIdString.components(separatedBy: "_")
                         captureInfoResults.append(CaptureInfo(id: captureId,
-                                                              captureDir: self.captureDir!))
+                                                              captureDir: self.captureDir!, imageUrlPrefix: ImagePrefix(rawValue: imageUrlComponents[1]) ?? .ARKit))
                     }
                     // Sort by the capture id.
                     captureInfoResults.sort(by: { $0.id < $1.id })

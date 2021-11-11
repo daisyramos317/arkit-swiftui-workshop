@@ -46,8 +46,8 @@ struct CameraView: View {
                                     .scaledToFit()
                                     .padding(.all))
 
-                        case let .arCaptureSession(session):
-                            ARViewRepresentable(session: session, model: model)
+                        case .arCaptureSession:
+                            ARViewRepresentable(session: CameraViewModel.arSession, model: model)
                                 .frame(width: geometryReader.size.width,
                                        height: geometryReader.size.width * aspectRatio,
                                        alignment: .center)

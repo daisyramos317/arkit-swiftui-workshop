@@ -20,6 +20,8 @@ class ARViewController: UIViewController, ARSessionDelegate, ARSCNViewDelegate {
     lazy var arView: ARSCNView = {
         let sceneView = ARSCNView()
         sceneView.delegate = self
+        sceneView.session = session
+        sceneView.session.delegate = self
         sceneView.showsStatistics = true
         return sceneView
     }()
@@ -36,10 +38,7 @@ class ARViewController: UIViewController, ARSessionDelegate, ARSCNViewDelegate {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        arView.session = session
-        arView.session.delegate = self
         addSceneView()
-
     }
 
     private func addSceneView() {
@@ -59,20 +58,28 @@ class ARViewController: UIViewController, ARSessionDelegate, ARSCNViewDelegate {
             return
         }
 
-        var confidenceMapData: Data?
-
-        if let confidenceMap = currentFrame.sceneDepth?.confidenceMap, let confidenceMapCIImage = confidenceMapToCIImage(pixelBuffer: confidenceMap) {
-            let colorSpace = CGColorSpace(name: CGColorSpace.linearGray)!
-            confidenceMapData = imageContext.tiffRepresentation(of: confidenceMapCIImage, format: .L8, colorSpace: colorSpace, options: [.disparityImage: confidenceMapCIImage])
-        }
-
         if let snapshotCompletion = viewModel.snapshotCompletionHandler {
+            var confidenceMapData: Data?
+
+            if let confidenceMap = currentFrame.sceneDepth?.confidenceMap {
+                let confidenceMapCIImage = confidenceMapToCIImage(pixelBuffer: confidenceMap)!
+
+                let colorSpace = CGColorSpace(name: CGColorSpace.linearGray)!
+                confidenceMapData = imageContext.tiffRepresentation(of: confidenceMapCIImage,
+                                                                    format: .L8,
+                                                                    colorSpace: colorSpace,
+                                                                    options: [.disparityImage: confidenceMapCIImage])
+
+            }
+
             let capturedImageCoreImage = CIImage(cvPixelBuffer: currentFrame.capturedImage).oriented(.right)
             let cgImage = imageContext.createCGImage(capturedImageCoreImage, from: capturedImageCoreImage.extent)!
 
             let capturedImage = UIImage(cgImage: cgImage, scale: 1.0, orientation: .up)
-            let info = ARSnapshotInfo(timestamp: currentFrame.timestamp, capturedImage: capturedImage, capturedImagePixelBuffer: currentFrame.capturedImage, confidenceMapImageData: confidenceMapData)
+
+            let info = ARSnapshotInfo(timestamp: currentFrame.timestamp, capturedImage: capturedImage, capturedImagePixelBuffer: currentFrame.capturedImage,  confidenceMapImageData: confidenceMapData)
             snapshotCompletion(info)
+            viewModel.snapshotCompletionHandler = nil
         }
     }
 

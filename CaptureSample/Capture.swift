@@ -98,7 +98,7 @@ struct Capture: Identifiable {
     private func writeImage(to captureDir: URL) -> Bool {
         switch captureType {
         case let .avCapturePhoto(photo):
-            let imageUrl = CaptureInfo.imageUrl(in: captureDir, id: id)
+            let imageUrl = CaptureInfo.imageUrl(in: captureDir, id: id, prefix: CaptureInfo.avPhotoStringPrefix, imageSuffix: .jpg)
             print("Saving: \(imageUrl.path)...")
             logger.log("Depth Data = \(String(describing: photo.depthData))")
             do {
@@ -110,8 +110,29 @@ struct Capture: Identifiable {
                 return false
             }
         case let .arCapturePhoto(snapshotInfo):
+            let imageUrl = CaptureInfo.imageUrl(in: captureDir, id: id, prefix: CaptureInfo.arPhotoStringPrefix, imageSuffix: .jpg)
+            let confidenceMapImageUrl = CaptureInfo.confidenceMapImageUrl(in: captureDir, id: id)
 
-            return true
+            print("Saving: \(imageUrl.path)...")
+            do {
+
+                try snapshotInfo.capturedImage.jpegData(compressionQuality: 1.0)?.write(to: URL(fileURLWithPath: imageUrl.path), options: .atomic)
+
+
+                if let confidenceMapImage = snapshotInfo.confidenceMapImageData {
+                    do {
+                        let url = URL(fileURLWithPath: confidenceMapImageUrl.path)
+                        try confidenceMapImage.write(to: url, options: .atomic)
+                    } catch {
+                        logger.error("Can't write confidence map data image error=\(String(describing: error))")
+                    }
+                }
+
+                return true
+            } catch {
+                logger.error("Can't write image to \"\(imageUrl.path)\" error=\(String(describing: error))")
+                return false
+            }
         }
     }
     

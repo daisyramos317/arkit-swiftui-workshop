@@ -38,6 +38,7 @@ class PhotoCaptureProcessor: NSObject {
     private var depthMapData: Data?
     private var depthData: AVDepthData?
     private var gravity: CMAcceleration?
+    private var captureType: Capture.CaptureType?
     
     init(with requestedPhotoSettings: AVCapturePhotoSettings,
          model: CameraViewModel,
@@ -100,9 +101,11 @@ extension PhotoCaptureProcessor: AVCapturePhotoCaptureDelegate {
         if let error = error {
             print("Error capturing photo: \(error)")
             photoData = nil
+            captureType = nil
         } else {
             // Cache the HEIF representation of the data.
             photoData = photo
+            captureType = .avCapturePhoto(photo)
         }
         
         // Cache the depth data, if it exists, as a disparity map.
@@ -136,13 +139,12 @@ extension PhotoCaptureProcessor: AVCapturePhotoCaptureDelegate {
             return
         }
         
-        guard let photoData = photoData else {
-            print("No photo data resource")
+        guard let captureType = captureType else {
             return
         }
         
         print("Making capture and adding to model...")
-        //model.addCapture(Capture(id: photoId, photo: photoData, depthData: depthMapData,
-        //                         gravity: gravity))
+        model.addCapture(Capture(id: photoId, captureType: captureType, depthData: depthMapData,
+                                 gravity: gravity))
     }
 }
