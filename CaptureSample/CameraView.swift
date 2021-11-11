@@ -29,7 +29,7 @@ struct CameraView: View {
                     // around the live preview and round the corners.
                     VStack {
                         Spacer()
-                        CameraPreviewView(session: model.session)
+                        CameraPreviewView(session: model.sessionType)
                             .frame(width: geometryReader.size.width,
                                    height: geometryReader.size.width * aspectRatio,
                                    alignment: .center)

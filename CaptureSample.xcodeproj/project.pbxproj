@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		ABA17BB3273D976C002CD11E /* SessionType.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABA17BB2273D976C002CD11E /* SessionType.swift */; };
 		C91EEE4B25EDA200009FD603 /* CaptureFoldersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C91EEE4A25EDA200009FD603 /* CaptureFoldersView.swift */; };
 		C91EEE4D25EDBE46009FD603 /* CaptureFolderState.swift in Sources */ = {isa = PBXBuildFile; fileRef = C91EEE4C25EDBE46009FD603 /* CaptureFolderState.swift */; };
 		C94968AE25F2C24100540756 /* InfoPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C94968AD25F2C24100540756 /* InfoPanelView.swift */; };
@@ -32,6 +33,7 @@
 		7BAFE7282618093500D2299C /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		7C6C99F1D4B6E3EBA3A7B7DF /* LICENSE.txt */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; path = LICENSE.txt; sourceTree = "<group>"; };
 		9AEEB9169F5D7FC75E6B35A2 /* SampleCode.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = SampleCode.xcconfig; path = Configuration/SampleCode.xcconfig; sourceTree = "<group>"; };
+		ABA17BB2273D976C002CD11E /* SessionType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionType.swift; sourceTree = "<group>"; };
 		C91EEE4A25EDA200009FD603 /* CaptureFoldersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureFoldersView.swift; sourceTree = "<group>"; };
 		C91EEE4C25EDBE46009FD603 /* CaptureFolderState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureFolderState.swift; sourceTree = "<group>"; };
 		C94968AD25F2C24100540756 /* InfoPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InfoPanelView.swift; sourceTree = "<group>"; };
@@ -116,6 +118,7 @@
 				C9E38E1625C8CB5D00171AB3 /* Assets.xcassets */,
 				C9E38E1B25C8CB5D00171AB3 /* Info.plist */,
 				C9E38E1825C8CB5D00171AB3 /* Preview Content */,
+				ABA17BB2273D976C002CD11E /* SessionType.swift */,
 			);
 			path = CaptureSample;
 			sourceTree = "<group>";
@@ -216,6 +219,7 @@
 				C9A2DCE825F803A8005DCCBB /* CaptureInfo.swift in Sources */,
 				C9BF999E25E07A5200707ADC /* CaptureGalleryView.swift in Sources */,
 				C9E38E1525C8CB5B00171AB3 /* ContentView.swift in Sources */,
+				ABA17BB3273D976C002CD11E /* SessionType.swift in Sources */,
 				C9BA144525EF052300A19324 /* AsyncImageHelpers.swift in Sources */,
 				C9605AE525CCB8D800FDB64F /* CameraView.swift in Sources */,
 				C9516ADB25F090FE00DA396D /* TriggerEveryTimer.swift in Sources */,

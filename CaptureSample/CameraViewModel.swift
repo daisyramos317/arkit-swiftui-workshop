@@ -9,6 +9,7 @@ import AVFoundation
 import Combine
 import CoreMotion
 import SwiftUI
+import ARKit
 
 import os
 
@@ -18,7 +19,10 @@ private let logger = Logger(subsystem: "com.apple.sample.CaptureSample",
 /// This is a SwiftUI observable data model class that holds all of the app's state and handles all changes
 /// to that state. The app's views observe this object and update themseves to reflect changes.
 class CameraViewModel: ObservableObject {
-    var session: AVCaptureSession
+    
+    @Published private (set) var sessionType: SessionType
+
+    private var avCaptureSession = AVCaptureSession()
 
     enum CaptureMode {
         /// The user has selected manual capture mode, which captures one
@@ -104,13 +108,25 @@ class CameraViewModel: ObservableObject {
         return captureFolderState?.captureDir
     }
 
+    private var defaultConfiguration: ARWorldTrackingConfiguration = {
+        let configuration = ARWorldTrackingConfiguration()
+        if type(of: configuration).supportsSceneReconstruction(.meshWithClassification) {
+            configuration.sceneReconstruction.insert(.meshWithClassification)
+        } else {
+            configuration.planeDetection = [.horizontal, .vertical]
+        }
+        configuration.environmentTexturing = .automatic
+        configuration.isLightEstimationEnabled = true
+        return configuration
+    }()
+
     static let maxPhotosAllowed = 250
     static let recommendedMinPhotos = 30
     static let recommendedMaxPhotos = 200
     static let defaultAutomaticCaptureIntervalSecs: Double = 3.0
 
-    init() {
-        session = AVCaptureSession()
+    init(sessionType: SessionType) {
+        self.sessionType = sessionType
 
         // This is an asynchronous call that begins all setup. It sets
         // up the camera device, motion device (gravity), and ensures correct
@@ -216,7 +232,7 @@ class CameraViewModel: ObservableObject {
         // If authorization fails, set setupResult to .unauthorized.
         requestAuthorizationIfNeeded()
         sessionQueue.async {
-            self.configureSession()
+            self.configureAVCaptureSession()
         }
 
         if motionManager.isDeviceMotionAvailable {
@@ -233,24 +249,34 @@ class CameraViewModel: ObservableObject {
     }
 
     func startSession() {
-        dispatchPrecondition(condition: .onQueue(.main))
-        logger.log("Starting session...")
-        sessionQueue.async {
-            self.session.startRunning()
-            self.isSessionRunning = self.session.isRunning
+        switch sessionType {
+        case let .avCaptureSession(session):
+            dispatchPrecondition(condition: .onQueue(.main))
+            logger.log("Starting session...")
+            sessionQueue.async {
+                session.startRunning()
+                self.isSessionRunning = session.isRunning
+            }
+        case let .arCaptureSession(session):
+            session.run(defaultConfiguration)
         }
     }
 
     func pauseSession() {
-        dispatchPrecondition(condition: .onQueue(.main))
-        logger.log("Pausing session...")
-        sessionQueue.async {
-            self.session.stopRunning()
-            self.isSessionRunning = self.session.isRunning
-        }
-        // Stop auto-capturing if the capture screen is no longer showing.
-        if isAutoCaptureActive {
-            stopAutomaticCapture()
+        switch sessionType {
+        case let .avCaptureSession(session):
+            dispatchPrecondition(condition: .onQueue(.main))
+            logger.log("Pausing session...")
+            sessionQueue.async {
+                session.stopRunning()
+                self.isSessionRunning = session.isRunning
+            }
+            // Stop auto-capturing if the capture screen is no longer showing.
+            if isAutoCaptureActive {
+                stopAutomaticCapture()
+            }
+        case let .arCaptureSession(session):
+            session.pause()
         }
     }
 
@@ -329,74 +355,78 @@ class CameraViewModel: ObservableObject {
     // MARK: - Private Functions
 
     private func capturePhotoAndMetadata() {
-        logger.log("Capture photo called...")
-        dispatchPrecondition(condition: .onQueue(.main))
+        switch sessionType {
+        case let .avCaptureSession(session):
+            logger.log("Capture photo called...")
+            dispatchPrecondition(condition: .onQueue(.main))
 
-        /// This property retrieves and stores the video preview layer's video orientation on the main
-        /// queue before starting the session queue. This ensures that UI elements can be accessed on
-        /// the main thread.
-        let videoPreviewLayerOrientation = session.connections[0].videoOrientation
+            /// This property retrieves and stores the video preview layer's video orientation on the main
+            /// queue before starting the session queue. This ensures that UI elements can be accessed on
+            /// the main thread.
+            let videoPreviewLayerOrientation = session.connections[0].videoOrientation
 
-        sessionQueue.async {
-            if let photoOutputConnection = self.photoOutput.connection(with: .video) {
-                photoOutputConnection.videoOrientation = videoPreviewLayerOrientation
+            sessionQueue.async {
+                if let photoOutputConnection = self.photoOutput.connection(with: .video) {
+                    photoOutputConnection.videoOrientation = videoPreviewLayerOrientation
+                }
+                var photoSettings = AVCapturePhotoSettings()
+
+                // Request HEIF photos if supported and enable high-resolution photos.
+                if  self.photoOutput.availablePhotoCodecTypes.contains(.hevc) {
+                    photoSettings = AVCapturePhotoSettings(
+                        format: [AVVideoCodecKey: AVVideoCodecType.hevc])
+                }
+
+                // Turn off the flash. The app relies on ambient lighting to avoid specular highlights.
+                if self.videoDeviceInput!.device.isFlashAvailable {
+                    photoSettings.flashMode = .off
+                }
+
+                // Turn on high-resolution, depth data, and quality prioritzation mode.
+                photoSettings.isHighResolutionPhotoEnabled = true
+                photoSettings.isDepthDataDeliveryEnabled = self.photoOutput.isDepthDataDeliveryEnabled
+                photoSettings.photoQualityPrioritization = self.photoQualityPrioritizationMode
+
+                // Request that the camera embed a depth map into the HEIC output file.
+                photoSettings.embedsDepthDataInPhoto = true
+
+                // Specify a preview image.
+                if !photoSettings.__availablePreviewPhotoPixelFormatTypes.isEmpty {
+                    photoSettings.previewPhotoFormat =
+                        [kCVPixelBufferPixelFormatTypeKey:
+                            photoSettings.__availablePreviewPhotoPixelFormatTypes.first!,
+                         kCVPixelBufferWidthKey: self.previewWidth,
+                         kCVPixelBufferHeightKey: self.previewHeight] as [String: Any]
+                    logger.log("Found available previewPhotoFormat: \(String(describing: photoSettings.previewPhotoFormat))")
+                } else {
+                    logger.warning("Can't find preview photo formats!  Not setting...")
+                }
+
+                // Tell the camera to embed a preview image in the output file.
+                photoSettings.embeddedThumbnailPhotoFormat = [
+                    AVVideoCodecKey: AVVideoCodecType.jpeg,
+                    AVVideoWidthKey: self.thumbnailWidth,
+                    AVVideoHeightKey: self.thumbnailHeight
+                ]
+
+                DispatchQueue.main.async {
+                    self.isHighQualityMode = photoSettings.isHighResolutionPhotoEnabled
+                        && photoSettings.photoQualityPrioritization == .quality
+                }
+
+                self.photoId += 1
+                let photoCaptureProcessor = self.makeNewPhotoCaptureProcessor(photoId: self.photoId,
+                                                                              photoSettings: photoSettings)
+
+                // The photo output holds a weak reference to the photo capture
+                // delegate, so it also stores it in an array, which maintains a
+                // strong reference so the system won't deallocate it.
+                self.inProgressPhotoCaptureDelegates[
+                    photoCaptureProcessor.requestedPhotoSettings.uniqueID] = photoCaptureProcessor
+                logger.log("inProgressCaptures=\(self.inProgressPhotoCaptureDelegates.count)")
+                self.photoOutput.capturePhoto(with: photoSettings, delegate: photoCaptureProcessor)
             }
-            var photoSettings = AVCapturePhotoSettings()
-
-            // Request HEIF photos if supported and enable high-resolution photos.
-            if  self.photoOutput.availablePhotoCodecTypes.contains(.hevc) {
-                photoSettings = AVCapturePhotoSettings(
-                    format: [AVVideoCodecKey: AVVideoCodecType.hevc])
-            }
-
-            // Turn off the flash. The app relies on ambient lighting to avoid specular highlights.
-            if self.videoDeviceInput!.device.isFlashAvailable {
-                photoSettings.flashMode = .off
-            }
-
-            // Turn on high-resolution, depth data, and quality prioritzation mode.
-            photoSettings.isHighResolutionPhotoEnabled = true
-            photoSettings.isDepthDataDeliveryEnabled = self.photoOutput.isDepthDataDeliveryEnabled
-            photoSettings.photoQualityPrioritization = self.photoQualityPrioritizationMode
-
-            // Request that the camera embed a depth map into the HEIC output file.
-            photoSettings.embedsDepthDataInPhoto = true
-
-            // Specify a preview image.
-            if !photoSettings.__availablePreviewPhotoPixelFormatTypes.isEmpty {
-                photoSettings.previewPhotoFormat =
-                    [kCVPixelBufferPixelFormatTypeKey:
-                        photoSettings.__availablePreviewPhotoPixelFormatTypes.first!,
-                     kCVPixelBufferWidthKey: self.previewWidth,
-                     kCVPixelBufferHeightKey: self.previewHeight] as [String: Any]
-                logger.log("Found available previewPhotoFormat: \(String(describing: photoSettings.previewPhotoFormat))")
-            } else {
-                logger.warning("Can't find preview photo formats!  Not setting...")
-            }
-
-            // Tell the camera to embed a preview image in the output file.
-            photoSettings.embeddedThumbnailPhotoFormat = [
-                AVVideoCodecKey: AVVideoCodecType.jpeg,
-                AVVideoWidthKey: self.thumbnailWidth,
-                AVVideoHeightKey: self.thumbnailHeight
-            ]
-
-            DispatchQueue.main.async {
-                self.isHighQualityMode = photoSettings.isHighResolutionPhotoEnabled
-                    && photoSettings.photoQualityPrioritization == .quality
-            }
-
-            self.photoId += 1
-            let photoCaptureProcessor = self.makeNewPhotoCaptureProcessor(photoId: self.photoId,
-                                                                          photoSettings: photoSettings)
-
-            // The photo output holds a weak reference to the photo capture
-            // delegate, so it also stores it in an array, which maintains a
-            // strong reference so the system won't deallocate it.
-            self.inProgressPhotoCaptureDelegates[
-                photoCaptureProcessor.requestedPhotoSettings.uniqueID] = photoCaptureProcessor
-            logger.log("inProgressCaptures=\(self.inProgressPhotoCaptureDelegates.count)")
-            self.photoOutput.capturePhoto(with: photoSettings, delegate: photoCaptureProcessor)
+        case let .arCaptureSession(session): break
         }
     }
 
@@ -482,7 +512,7 @@ class CameraViewModel: ObservableObject {
         }
     }
 
-    private func configureSession() {
+    private func configureAVCaptureSession() {
         // Make sure setup hasn't failed.
         guard setupResult == .inProgress else {
             logger.error("Setup failed, can't configure session!  result=\(String(describing: self.setupResult))")
@@ -490,17 +520,17 @@ class CameraViewModel: ObservableObject {
         }
 
         // Start a new configuration and commit it.
-        session.beginConfiguration()
-        defer { session.commitConfiguration() }
+        avCaptureSession.beginConfiguration()
+        defer { avCaptureSession.commitConfiguration() }
 
-        session.sessionPreset = .photo
+        avCaptureSession.sessionPreset = .photo
 
         do {
             let videoDeviceInput = try AVCaptureDeviceInput(
                 device: getVideoDeviceForPhotogrammetry())
 
-            if session.canAddInput(videoDeviceInput) {
-                session.addInput(videoDeviceInput)
+            if avCaptureSession.canAddInput(videoDeviceInput) {
+                avCaptureSession.addInput(videoDeviceInput)
                 self.videoDeviceInput = videoDeviceInput
             } else {
                 logger.error("Couldn't add video device input to the session.")
@@ -534,8 +564,8 @@ class CameraViewModel: ObservableObject {
     }
 
     private func addPhotoOutputOrThrow() throws {
-        if session.canAddOutput(photoOutput) {
-            session.addOutput(photoOutput)
+        if avCaptureSession.canAddOutput(photoOutput) {
+            avCaptureSession.addOutput(photoOutput)
 
             // Prefer high resolution and maximum quality, with depth.
             photoOutput.isHighResolutionCaptureEnabled = true
