@@ -14,7 +14,8 @@ struct CameraView: View {
     
     @ObservedObject var model: CameraViewModel
     @State private var showInfo: Bool = false
-    
+    @State private var selectedIndex = "ARKit"
+
     let aspectRatio: CGFloat = 4.0 / 3.0
     let previewCornerRadius: CGFloat = 15.0
     
@@ -29,6 +30,7 @@ struct CameraView: View {
                     // around the live preview and round the corners.
                     VStack {
                         Spacer()
+                        segmentedControl
 
                         switch model.sessionType {
                         case let .avCaptureSession(session):
@@ -44,10 +46,15 @@ struct CameraView: View {
                                     .resizable()
                                     .scaledToFit()
                                     .padding(.all))
-                        
+
                         Spacer()
                         case let .arCaptureSession(session):
                             ARViewRepresentable(session: session, model: model)
+                                .frame(width: geometryReader.size.width,
+                                       height: geometryReader.size.width * aspectRatio,
+                                       alignment: .center)
+                                .onAppear { model.startSession() }
+                                .onDisappear { model.pauseSession() }
                         }
                     }
                     
@@ -67,6 +74,36 @@ struct CameraView: View {
             .navigationBarTitle("Scan")
             .navigationBarHidden(true)
             .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+
+    var segmentedControl: some View {
+        VStack {
+            Picker("Selected Session", selection: $selectedIndex) {
+                ForEach(model.sessions, id: \.self) { sessionType in
+                    switch sessionType {
+                    case .arCaptureSession:
+                        Text("ARKit Capture Session").tag("ARKit")
+                    case .avCaptureSession:
+                        Text("AVCapture Session").tag("AVCapture")
+                    }
+                }
+            }
+            .onChange(of: selectedIndex) { selectedIndex in
+                if selectedIndex == "ARKit" {
+                    guard let session = model.sessions.first else { return }
+                    model.pauseSession()
+                    model.switchSession(session)
+                    model.startSession()
+                } else if selectedIndex == "AVCapture" {
+                    guard let session = model.sessions.last else { return }
+
+                    CameraViewModel.arSession.pause()
+                    model.switchSession(session)
+                    model.startSession()
+                }
+            }
+            .pickerStyle(.segmented)
         }
     }
 }

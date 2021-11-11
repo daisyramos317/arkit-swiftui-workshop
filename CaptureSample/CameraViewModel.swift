@@ -23,7 +23,8 @@ class CameraViewModel: ObservableObject {
     @Published private (set) var sessionType: SessionType
 
     private var avCaptureSession = AVCaptureSession()
-
+    lazy var sessions: [SessionType] = [.arCaptureSession(CameraViewModel.arSession), .avCaptureSession(avCaptureSession)]
+    
     static let arSession: ARSession = {
         let session = ARSession()
         let configuration = ARWorldTrackingConfiguration()
@@ -265,16 +266,17 @@ class CameraViewModel: ObservableObject {
     }
 
     func startSession() {
-        switch sessionType {
-        case let .avCaptureSession(session):
-            dispatchPrecondition(condition: .onQueue(.main))
-            logger.log("Starting session...")
-            sessionQueue.async {
-                session.startRunning()
-                self.isSessionRunning = session.isRunning
+        dispatchPrecondition(condition: .onQueue(.main))
+
+        sessionQueue.async {
+            switch self.sessionType {
+            case let .avCaptureSession(session):
+                logger.log("Starting session...")
+                    session.startRunning()
+                    self.isSessionRunning = session.isRunning
+            case let .arCaptureSession(session):
+                session.run(self.defaultConfiguration)
             }
-        case let .arCaptureSession(session):
-            session.run(defaultConfiguration)
         }
     }
 
@@ -293,6 +295,15 @@ class CameraViewModel: ObservableObject {
             }
         case let .arCaptureSession(session):
             session.pause()
+        }
+    }
+
+    func switchSession(_ session: SessionType) {
+        switch session {
+        case let .arCaptureSession(session):
+            sessionType = .arCaptureSession(session)
+        case let .avCaptureSession(session):
+            sessionType = .avCaptureSession(session)
         }
     }
 

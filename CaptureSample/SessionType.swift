@@ -10,9 +10,18 @@ import Foundation
 import AVFoundation
 import ARKit
 
-enum SessionType {
+enum SessionType: Hashable {
 
     case avCaptureSession(_ session: AVCaptureSession)
 
     case arCaptureSession(_ session: ARSession)
+
+    var isARSession: Bool {
+        switch self {
+        case .avCaptureSession:
+            return false
+        case .arCaptureSession:
+            return true
+        }
+    }
 }

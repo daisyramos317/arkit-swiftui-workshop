@@ -18,13 +18,14 @@ class ARViewController: UIViewController, ARSessionDelegate, ARSCNViewDelegate {
     lazy var arView: ARSCNView = {
         let sceneView = ARSCNView()
         sceneView.delegate = self
+        sceneView.showsStatistics = true
         return sceneView
     }()
 
     init(session: ARSession, model: CameraViewModel) {
         self.session = session
         self.viewModel = model
-        super.init()
+        super.init(nibName: nil, bundle: nil)
     }
 
     required init?(coder: NSCoder) {
@@ -34,7 +35,24 @@ class ARViewController: UIViewController, ARSessionDelegate, ARSCNViewDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         arView.session.delegate = self
+        addSceneView()
 
+    }
+
+    private func addSceneView() {
+        view.addSubview(arView)
+
+        arView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            arView.topAnchor.constraint(equalTo: view.topAnchor),
+            arView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            arView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            arView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+        ])
+    }
+
+    func session(_ session: ARSession, didUpdate frame: ARFrame) {
+        
     }
 }
 
