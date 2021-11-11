@@ -34,6 +34,7 @@ class ARViewController: UIViewController, ARSessionDelegate, ARSCNViewDelegate {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        arView.session = session
         arView.session.delegate = self
         addSceneView()
 
@@ -52,7 +53,7 @@ class ARViewController: UIViewController, ARSessionDelegate, ARSCNViewDelegate {
     }
 
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
-        
+
     }
 }
 
