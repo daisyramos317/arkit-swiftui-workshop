@@ -113,6 +113,8 @@ class CameraViewModel: ObservableObject {
     /// next capture trigger.
     @Published var timeUntilCaptureSecs: Double = 0
 
+    @Published var snapshotCompletionHandler: ((_ info: ARSnapshotInfo) -> Void)? = nil
+
     var autoCaptureIntervalSecs: Double = 0
 
     var readyToCapture: Bool {
@@ -453,7 +455,12 @@ class CameraViewModel: ObservableObject {
                 logger.log("inProgressCaptures=\(self.inProgressPhotoCaptureDelegates.count)")
                 self.photoOutput.capturePhoto(with: photoSettings, delegate: photoCaptureProcessor)
             }
-        case let .arCaptureSession(session): break
+        case .arCaptureSession:
+            snapshotCompletionHandler = { [weak self] snapshotInfo in
+                // persist snapshot info
+                let capture = Capture(id: UInt32(snapshotInfo.timestamp), captureType: .arCapturePhoto(snapshotInfo))
+                self?.addCapture(capture)
+            }
         }
     }
 

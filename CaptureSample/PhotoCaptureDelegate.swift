@@ -142,7 +142,7 @@ extension PhotoCaptureProcessor: AVCapturePhotoCaptureDelegate {
         }
         
         print("Making capture and adding to model...")
-        model.addCapture(Capture(id: photoId, photo: photoData, depthData: depthMapData,
-                                 gravity: gravity))
+        //model.addCapture(Capture(id: photoId, photo: photoData, depthData: depthMapData,
+        //                         gravity: gravity))
     }
 }

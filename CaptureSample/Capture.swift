@@ -19,11 +19,18 @@ private let logger = Logger(subsystem: "com.apple.sample.CaptureSample",
 /// This is a data object that contains one image and its associated metadata, including gravity, depth,
 /// and alpha mask.
 struct Capture: Identifiable {
+
+    enum CaptureType {
+
+        case avCapturePhoto(_ photo: AVCapturePhoto)
+
+        case arCapturePhoto(_ snapshotInfo: ARSnapshotInfo)
+    }
     /// This is the unique ID for this capture.
     let id: UInt32
-    
-    /// This is the original photo object, including preview.
-    let photo: AVCapturePhoto
+
+
+    let captureType: CaptureType
     
     /// This property returns the image preview. It returns a cached preview if one is available. If there's no
     /// cached preview, it creates a preview image, caches it, then returns it.
@@ -39,13 +46,18 @@ struct Capture: Identifiable {
     
     /// This view displays the full-size image.
     var uiImage: UIImage {
-        return UIImage(data: photo.fileDataRepresentation()!, scale: 1.0)!
+        switch captureType {
+        case let .avCapturePhoto(photo):
+            return UIImage(data: photo.fileDataRepresentation()!, scale: 1.0)!
+        case let .arCapturePhoto(snapshotInfo):
+            return snapshotInfo.capturedImage
+        }
     }
     
-    init(id: UInt32, photo: AVCapturePhoto, depthData: Data? = nil,
+    init(id: UInt32, captureType: CaptureType, depthData: Data? = nil,
          gravity: CMAcceleration? = nil) {
         self.id = id
-        self.photo = photo
+        self.captureType = captureType
         self.depthData = depthData
         self.gravity = gravity
     }
@@ -66,29 +78,40 @@ struct Capture: Identifiable {
     }
     
     private func makePreview() -> UIImage? {
-        if let previewPixelBuffer = photo.previewPixelBuffer {
-            let ciImage: CIImage = CIImage(cvPixelBuffer: previewPixelBuffer)
-            let context: CIContext = CIContext(options: nil)
-            let cgImage: CGImage = context.createCGImage(ciImage, from: ciImage.extent)!
-            return UIImage(cgImage: cgImage, scale: 1.0,
-                           orientation: uiImage.imageOrientation)
-        } else {
-            return nil
+        switch captureType {
+        case let .avCapturePhoto(photo):
+            if let previewPixelBuffer = photo.previewPixelBuffer {
+                let ciImage: CIImage = CIImage(cvPixelBuffer: previewPixelBuffer)
+                let context: CIContext = CIContext(options: nil)
+                let cgImage: CGImage = context.createCGImage(ciImage, from: ciImage.extent)!
+                return UIImage(cgImage: cgImage, scale: 1.0,
+                               orientation: uiImage.imageOrientation)
+            } else {
+                return nil
+            }
+        case let .arCapturePhoto(snapshotInfo):
+            return snapshotInfo.capturedImage
         }
     }
-    
+
     @discardableResult
     private func writeImage(to captureDir: URL) -> Bool {
-        let imageUrl = CaptureInfo.imageUrl(in: captureDir, id: id)
-        print("Saving: \(imageUrl.path)...")
-        logger.log("Depth Data = \(String(describing: photo.depthData))")
-        do {
-            try photo.fileDataRepresentation()!
-                .write(to: URL(fileURLWithPath: imageUrl.path), options: .atomic)
+        switch captureType {
+        case let .avCapturePhoto(photo):
+            let imageUrl = CaptureInfo.imageUrl(in: captureDir, id: id)
+            print("Saving: \(imageUrl.path)...")
+            logger.log("Depth Data = \(String(describing: photo.depthData))")
+            do {
+                try photo.fileDataRepresentation()!
+                    .write(to: URL(fileURLWithPath: imageUrl.path), options: .atomic)
+                return true
+            } catch {
+                logger.error("Can't write image to \"\(imageUrl.path)\" error=\(String(describing: error))")
+                return false
+            }
+        case let .arCapturePhoto(snapshotInfo):
+
             return true
-        } catch {
-            logger.error("Can't write image to \"\(imageUrl.path)\" error=\(String(describing: error))")
-            return false
         }
     }
     

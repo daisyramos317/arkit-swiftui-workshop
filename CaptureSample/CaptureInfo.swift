@@ -166,6 +166,11 @@ struct CaptureInfo: Identifiable {
     static func depthUrl(in captureDir: URL, id: UInt32) -> URL {
         return captureDir.appendingPathComponent(photoIdString(for: id).appending("_depth.TIF"))
     }
+
+    static func confidenceMapImageUrl(in captureDir: URL, id: UInt32) -> URL {
+        return captureDir.appendingPathComponent(photoIdString(for: id).appending(".jpg").appending(".TIF"))
+    }
+
     
     /// `CaptureInfo` uses this serial queue for all file system access.
     private static let loaderQueue =
@@ -174,4 +179,6 @@ struct CaptureInfo: Identifiable {
     
     /// `CaptureInfo` uses this string prefix to create a file base name.
     private static let photoStringPrefix = "IMG_"
+
+    static let arPhotoStringPrefix = "ARKit_"
 }

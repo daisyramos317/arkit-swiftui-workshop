@@ -29,7 +29,6 @@ struct CameraView: View {
                     // Center the preview view vertically. Place a clip frame
                     // around the live preview and round the corners.
                     VStack {
-                        Spacer()
                         segmentedControl
 
                         switch model.sessionType {
@@ -47,7 +46,6 @@ struct CameraView: View {
                                     .scaledToFit()
                                     .padding(.all))
 
-                        Spacer()
                         case let .arCaptureSession(session):
                             ARViewRepresentable(session: session, model: model)
                                 .frame(width: geometryReader.size.width,
