@@ -11,7 +11,7 @@ import ARKit
 import SwiftUI
 import CoreImage
 
-class ARViewController: UIViewController, ARSessionDelegate, ARSCNViewDelegate {
+class ARViewController: UIViewController, ARSessionDelegate {
 
     @ObservedObject var viewModel: CameraViewModel
     let session: ARSession
@@ -19,7 +19,6 @@ class ARViewController: UIViewController, ARSessionDelegate, ARSCNViewDelegate {
 
     lazy var arView: ARSCNView = {
         let sceneView = ARSCNView()
-        sceneView.delegate = self
         sceneView.session = session
         sceneView.session.delegate = self
         sceneView.showsStatistics = true
