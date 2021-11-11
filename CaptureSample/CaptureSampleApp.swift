@@ -6,10 +6,11 @@ Custom app subclass.
 */
 
 import SwiftUI
+import ARKit
 
 @main
 struct CaptureSampleApp: App {
-    @StateObject var model = CameraViewModel()
+    @StateObject var model = CameraViewModel(sessionType: .arCaptureSession(CameraViewModel.arSession))
     
     var body: some Scene {
         WindowGroup {

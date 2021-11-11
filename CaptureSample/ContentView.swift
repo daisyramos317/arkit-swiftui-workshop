@@ -24,7 +24,7 @@ struct ContentView: View {
 }
 
 struct ContentView_Previews: PreviewProvider {
-    @StateObject private static var model = CameraViewModel()
+    @StateObject private static var model = CameraViewModel(sessionType: .arCaptureSession(CameraViewModel.arSession))
     static var previews: some View {
         ContentView(model: model)
     }

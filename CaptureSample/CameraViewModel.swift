@@ -24,6 +24,22 @@ class CameraViewModel: ObservableObject {
 
     private var avCaptureSession = AVCaptureSession()
 
+    static let arSession: ARSession = {
+        let session = ARSession()
+        let configuration = ARWorldTrackingConfiguration()
+
+        configuration.environmentTexturing = .automatic
+        configuration.isLightEstimationEnabled = true
+
+        if type(of: configuration).supportsFrameSemantics(.sceneDepth) {
+            configuration.frameSemantics.insert(.sceneDepth)
+        }
+
+
+        session.run(configuration)
+        return session
+    }()
+
     enum CaptureMode {
         /// The user has selected manual capture mode, which captures one
         /// image per button press.
